@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SI PARKIR - Admin Monitoring</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body class="bg-app">
+
+  <nav class="navbar navbar-expand-lg navbar-light app-nav sticky-top">
+    <div class="container">
+      <div class="d-flex align-items-center gap-2">
+  <img class="app-logo" src="assets/logo-undiknas.jpg" width="50" height="50" alt="Logo Kampus">
+  <div>
+    <div class="fw-bold lh-1 app-title">SI PARKIR</div>
+    <div class="small text-muted">Dashboard Admin</div>
+  </div>
+</div>
+      </div>
+
+      <div class="d-flex align-items-center gap-2">
+        <!-- STATUS ONLINE/OFFLINE -->
+        <span class="badge text-bg-light-subtle border app-pill me-2">
+          <i class="bi bi-wifi me-1"></i>
+          <span id="connStatus" class="fw-semibold status-offline">OFFLINE</span>
+          <span class="mx-1">•</span>
+          <span id="lastUpdate">-</span>
+        </span>
+
+        <a class="badge text-bg-light-subtle border app-pill text-decoration-none" href="index.html">
+          <i class="bi bi-people me-1"></i> Halaman User
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container my-4">
+    <div class="row g-4">
+
+      <div class="col-12 col-lg-8">
+        <div class="card shadow-sm app-card">
+          <div class="card-body">
+
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+              <div>
+                <h5 class="mb-1 fw-bold">Denah Parkir (Admin)</h5>
+                <div class="text-muted small" id="adminHint">
+                  Mode demo: klik slot untuk ubah status (unknown → free → full).
+                </div>
+              </div>
+
+              <div class="d-flex flex-wrap gap-2 align-items-center">
+                <span class="badge text-bg-secondary app-pill">Unknown: <span id="cUnknown">0</span></span>
+                <span class="badge text-bg-success app-pill">Kosong: <span id="cFree">0</span></span>
+                <span class="badge text-bg-danger app-pill">Terisi: <span id="cFull">0</span></span>
+
+                <button class="btn btn-sm btn-outline-primary app-btn" id="zoomBtn">
+                  <i class="bi bi-arrows-fullscreen me-1"></i> Perbesar
+                </button>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <div class="d-flex justify-content-between small text-muted mb-1">
+                <span>Utilisasi (yang terdeteksi)</span>
+                <span><span id="utilPct">0</span>%</span>
+              </div>
+              <div class="progress" style="height: 10px;">
+                <div id="utilBar" class="progress-bar bg-danger" style="width:0%"></div>
+              </div>
+            </div>
+
+            <div id="parkMap" class="park-map rounded-4 overflow-hidden border">
+              <img src="denah_fix.png" alt="Denah Parkir" />
+            </div>
+
+            <div class="d-flex flex-wrap gap-3 mt-3 small">
+              <div class="d-flex align-items-center gap-2">
+                <span class="legend-dot legend-unknown"></span> Unknown
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <span class="legend-dot legend-free"></span> Kosong
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <span class="legend-dot legend-full"></span> Terisi
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-lg-4">
+        <div class="card shadow-sm app-card sticky-lg-top" style="top:16px;">
+          <div class="card-body">
+            <h5 class="fw-bold mb-3">Panel Admin</h5>
+
+            <!-- DEMO MODE SWITCH -->
+            <div class="form-check form-switch mb-3">
+              <input class="form-check-input" type="checkbox" id="demoMode" checked>
+              <label class="form-check-label fw-semibold" for="demoMode">Demo Mode (boleh klik ubah status)</label>
+              <div class="small text-muted">
+                Jika perangkat ONLINE, sebaiknya matikan demo mode agar data sensor tidak tertimpa.
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Slot dipilih</label>
+              <div class="p-3 border rounded-4 bg-white">
+                <div class="d-flex justify-content-between">
+                  <span class="text-muted">ID</span>
+                  <span class="fw-bold" id="selId">-</span>
+                </div>
+                <div class="d-flex justify-content-between mt-1">
+                  <span class="text-muted">Status</span>
+                  <span class="fw-bold" id="selStatus">-</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="d-grid gap-2">
+              <button class="btn btn-outline-secondary app-btn" id="resetBtn">
+                <i class="bi bi-arrow-counterclockwise me-1"></i> Reset ke Unknown
+              </button>
+              <button class="btn btn-outline-primary app-btn" id="demoBtn">
+                <i class="bi bi-shuffle me-1"></i> Isi Demo Random
+              </button>
+            </div>
+
+            <hr class="my-4" />
+            <div class="small text-muted">
+              Catatan: Demo Mode hanya untuk simulasi. Saat perangkat ONLINE, sebaiknya Admin read-only.
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <button class="btn btn-primary fab-zoom d-lg-none" id="zoomFab" aria-label="Perbesar">
+    <i class="bi bi-zoom-in"></i>
+  </button>
+
+  <!-- Modal Zoom -->
+  <div class="modal fade" id="zoomModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen-sm-down modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div>
+            <div class="fw-bold">Denah Parkir (Zoom)</div>
+            <div class="small text-muted">Scroll untuk geser, gunakan slider untuk zoom.</div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+        </div>
+
+        <div class="modal-body p-2">
+          <div class="zoom-toolbar px-2 pb-2 d-flex flex-wrap gap-2 align-items-center">
+            <button class="btn btn-sm btn-outline-secondary" id="zOut"><i class="bi bi-dash-lg"></i></button>
+            <button class="btn btn-sm btn-outline-secondary" id="zIn"><i class="bi bi-plus-lg"></i></button>
+            <button class="btn btn-sm btn-outline-secondary" id="zReset">Reset</button>
+
+            <div class="ms-auto d-flex align-items-center gap-2">
+              <span class="small text-muted">Zoom</span>
+              <input id="zRange" type="range" min="100" max="220" value="100" class="form-range" style="width: 180px;">
+              <span class="small fw-semibold"><span id="zPct">100</span>%</span>
+            </div>
+          </div>
+
+          <div class="zoom-shell rounded-4 border">
+            <div id="parkMapZoom" class="park-map zoom-stage">
+              <img src="denah_fix.png" alt="Denah Parkir Zoom" />
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script type="module" src="admin.js"></script>
+</body>
+</html>

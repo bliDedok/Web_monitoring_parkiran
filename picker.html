@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      body { font-family: system-ui, Arial; }
+      #wrap { position: relative; display: inline-block; }
+      #img { max-width: 100%; height: auto; display: block; }
+      .box { position: absolute; border: 2px solid red; pointer-events: none; border-radius: 8px; }
+      .hud { margin: 10px 0; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+      input { padding: 6px 8px; }
+      button { padding: 6px 10px; cursor: pointer; }
+      pre { background: #111; color: #0f0; padding: 12px; overflow:auto; }
+      small { color: #555; }
+    </style>
+  </head>
+  <body>
+    <h3>Klik 2x: pojok kiri-atas lalu pojok kanan-bawah (untuk 1 slot)</h3>
+
+    <div id="wrap">
+      <img id="img" src="denah_fix.png" />
+    </div>
+
+    <div class="hud">
+      <label>Slot ID:
+        <input id="slotId" value="A1" />
+      </label>
+      <button id="next">Next ID</button>
+      <button id="undo">Undo</button>
+      <button id="clear">Clear</button>
+      <small id="hint">Klik: 0/2</small>
+    </div>
+
+    <p><b>Output (langsung % untuk web):</b></p>
+    <pre id="out">{}</pre>
+
+    <script>
+      const wrap = document.getElementById("wrap");
+      const img = document.getElementById("img");
+      const out = document.getElementById("out");
+      const slotId = document.getElementById("slotId");
+      const clearBtn = document.getElementById("clear");
+      const undoBtn = document.getElementById("undo");
+      const nextBtn = document.getElementById("next");
+      const hint = document.getElementById("hint");
+
+      const ORDER = ["A1","A2","A3","B1","B2","B3","C1","C2","C3","D1","D2","D3"];
+
+      let clicks = [];
+      let slots = [];   // {id, x,y,w,h} (0..1)
+      let boxes = [];   // DOM refs
+
+      function relPos(e) {
+        const r = img.getBoundingClientRect();
+        const x = (e.clientX - r.left) / r.width;
+        const y = (e.clientY - r.top) / r.height;
+        return { x, y };
+      }
+
+      function toPct(n) { return Math.max(0, Math.min(1, n)) * 100; }
+
+      function renderOutput() {
+        // format yang enak buat web overlay
+        const obj = {};
+        for (const s of slots) {
+          obj[s.id] = {
+            left: +toPct(s.x).toFixed(3),
+            top: +toPct(s.y).toFixed(3),
+            width: +toPct(s.w).toFixed(3),
+            height: +toPct(s.h).toFixed(3),
+          };
+        }
+        out.textContent = JSON.stringify(obj, null, 2);
+      }
+
+      function setHint() {
+        hint.textContent = `Klik: ${clicks.length}/2`;
+      }
+      setHint();
+
+      function nextId() {
+        const cur = slotId.value.trim();
+        const i = ORDER.indexOf(cur);
+        const next = ORDER[(i >= 0 ? i + 1 : 0) % ORDER.length];
+        slotId.value = next;
+      }
+
+      wrap.addEventListener("click", (e) => {
+        if (e.target !== img) return;
+        const p = relPos(e);
+        clicks.push(p);
+        setHint();
+
+        if (clicks.length === 2) {
+          const a = clicks[0], b = clicks[1];
+          const x = Math.min(a.x, b.x);
+          const y = Math.min(a.y, b.y);
+          const w = Math.abs(a.x - b.x);
+          const h = Math.abs(a.y - b.y);
+
+          // gambar box
+          const div = document.createElement("div");
+          div.className = "box";
+          div.style.left = (x * 100) + "%";
+          div.style.top = (y * 100) + "%";
+          div.style.width = (w * 100) + "%";
+          div.style.height = (h * 100) + "%";
+          wrap.appendChild(div);
+
+          boxes.push(div);
+          slots.push({ id: slotId.value.trim(), x, y, w, h });
+
+          renderOutput();
+          clicks = [];
+          setHint();
+          nextId();
+        }
+      });
+
+      nextBtn.onclick = nextId;
+
+      undoBtn.onclick = () => {
+        slots.pop();
+        const last = boxes.pop();
+        if (last) last.remove();
+        renderOutput();
+      };
+
+      clearBtn.onclick = () => {
+        slots = [];
+        clicks = [];
+        boxes.forEach(b => b.remove());
+        boxes = [];
+        out.textContent = "{}";
+        setHint();
+        slotId.value = "A1";
+      };
+    </script>
+  </body>
+</html>

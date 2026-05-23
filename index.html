@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SI PARKIR - Informasi Parkir</title>
+
+  <!-- Bootstrap + Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body class="bg-app user-view">
+
+  <nav class="navbar navbar-expand-lg navbar-light app-nav sticky-top">
+    <div class="container">
+      <div class="d-flex align-items-center gap-2">
+  <img class="app-logo" src="assets/logo-undiknas.jpg" width="50" height="50" alt="Logo Kampus">
+  <div>
+    <div class="fw-bold lh-1 app-title">SI PARKIR</div>
+    <div class="small text-muted">Info Ketersediaan Parkir</div>
+  </div>
+</div>
+      </div>
+
+      <!-- STATUS ONLINE/OFFLINE + LAST UPDATE (detik lalu) -->
+      <span class="badge text-bg-light-subtle border app-pill me-2">
+        <i class="bi bi-wifi me-1"></i>
+        <span id="connStatus" class="fw-semibold status-offline">OFFLINE</span>
+        <span class="mx-1">•</span>
+        <span id="lastUpdate">-</span>
+      </span>
+    </div>
+  </nav>
+
+  <main class="container my-4">
+    <div class="row g-4">
+
+      <!-- Denah -->
+      <div class="col-12 col-lg-8">
+        <div class="card shadow-sm app-card">
+          <div class="card-body">
+
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+              <div>
+                <h5 class="mb-1 fw-bold">Denah Parkir Mobil</h5>
+                <div class="text-muted small">
+                  Klik slot untuk melihat detail.
+                </div>
+              </div>
+
+              <div class="d-flex flex-wrap gap-2 align-items-center">
+                <span class="badge text-bg-success app-pill">Kosong: <span id="cFree">0</span></span>
+                <span class="badge text-bg-danger app-pill">Terisi: <span id="cFull">0</span></span>
+                <span class="badge text-bg-secondary app-pill">Unknown: <span id="cUnknown">0</span></span>
+
+                <div class="form-check form-switch small mb-0 ms-1">
+                  <input class="form-check-input" type="checkbox" role="switch" id="showOnlyActive">
+                  <label class="form-check-label" for="showOnlyActive">Hanya slot bersensor</label>
+                </div>
+
+                <button class="btn btn-sm btn-outline-primary app-btn" id="zoomBtn">
+                  <i class="bi bi-arrows-fullscreen me-1"></i> Perbesar
+                </button>
+              </div>
+            </div>
+
+            <div class="alert alert-primary d-flex align-items-center gap-2 rounded-4">
+              <i class="bi bi-info-circle"></i>
+              <div>
+                <div class="fw-semibold">Ringkasan</div>
+                <div class="small">
+                  Tersedia <span class="fw-bold" id="availableText">0</span> slot kosong (berdasarkan sensor aktif).
+                  <br />
+                  <span class="text-muted">Rekomendasi:</span> <span class="fw-bold" id="recText">-</span>
+                  <button class="btn btn-sm btn-outline-secondary ms-2 py-0 app-btn-mini" id="recDetailBtn" type="button" disabled>Detail</button>
+                </div>
+              </div>
+            </div>
+
+            <div id="parkMap" class="park-map rounded-4 overflow-hidden border">
+              <img src="denah_fix.png" alt="Denah Parkir" />
+            </div>
+
+            <div class="d-flex flex-wrap gap-3 mt-3 small">
+              <div class="d-flex align-items-center gap-2">
+                <span class="legend-dot legend-free"></span> Kosong
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <span class="legend-dot legend-full"></span> Terisi
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <span class="legend-dot legend-unknown"></span> Belum ada sensor / data
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Info -->
+      <div class="col-12 col-lg-4">
+        <div class="card shadow-sm app-card">
+          <div class="card-body">
+            <h5 class="fw-bold mb-3">Informasi</h5>
+
+            <div class="p-3 border rounded-4 bg-white mb-3">
+              <div class="d-flex justify-content-between">
+                <span class="text-muted">Slot kosong (sensor aktif)</span>
+                <span class="fw-bold text-success" id="availNum">0</span>
+              </div>
+              <div class="d-flex justify-content-between mt-1">
+                <span class="text-muted">Slot terisi (sensor aktif)</span>
+                <span class="fw-bold text-danger" id="fullNum">0</span>
+              </div>
+              <div class="d-flex justify-content-between mt-1">
+                <span class="text-muted">Belum ada sensor</span>
+                <span class="fw-bold text-secondary" id="unkNum">0</span>
+              </div>
+            </div>
+
+            <div class="alert alert-warning small rounded-4 mb-0">
+              <i class="bi bi-exclamation-triangle me-1"></i>
+              Jika “Unknown”, artinya slot belum dipasang sensor / data belum masuk, atau perangkat sedang OFFLINE.
+            </div>
+          </div>
+        </div>
+
+        <div class="card shadow-sm app-card mt-4">
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h5 class="fw-bold mb-0">Ringkasan per Zona</h5>
+              <span class="badge text-bg-light border app-pill small">slot bersensor</span>
+            </div>
+            <div id="zoneSummary" class="vstack gap-2"></div>
+            <div class="text-muted small mt-2">
+              Ditampilkan berdasarkan slot yang sudah terpasang sensor.
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+
+  <!-- Modal Detail Slot -->
+  <div class="modal fade" id="slotModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content app-modal">
+        <div class="modal-header">
+          <div class="d-flex align-items-center gap-2">
+            <div class="slot-pill" id="mSlotId">-</div>
+            <div>
+              <div class="fw-bold">Detail Slot Parkir</div>
+              <div class="small text-muted">Zona <span id="mSlotZone">-</span></div>
+            </div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-6">
+              <div class="small text-muted">Status</div>
+              <div class="fw-bold" id="mSlotStatus">-</div>
+            </div>
+            <div class="col-6">
+              <div class="small text-muted">Sensor</div>
+              <div class="fw-bold" id="mSlotSensor">-</div>
+            </div>
+
+            <div class="col-6">
+              <div class="small text-muted">Update terakhir</div>
+              <div class="fw-semibold" id="mLastUpdate">-</div>
+            </div>
+            <div class="col-6">
+              <div class="small text-muted">Perubahan terakhir</div>
+              <div class="fw-semibold" id="mLastChange">-</div>
+            </div>
+          </div>
+
+          <div class="alert alert-light border rounded-4 mt-3 mb-0 small">
+            <i class="bi bi-info-circle me-1"></i>
+            Jika status “Unknown”, berarti slot belum ada sensor / data belum masuk.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating zoom (mobile) -->
+  <button class="btn btn-primary fab-zoom d-lg-none" id="zoomFab" aria-label="Perbesar">
+    <i class="bi bi-zoom-in"></i>
+  </button>
+
+  <!-- Modal Zoom -->
+  <div class="modal fade" id="zoomModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen-sm-down modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div>
+            <div class="fw-bold">Denah Parkir (Zoom)</div>
+            <div class="small text-muted">Scroll untuk geser, gunakan slider untuk zoom.</div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+        </div>
+
+        <div class="modal-body p-2">
+          <div class="zoom-toolbar px-2 pb-2 d-flex flex-wrap gap-2 align-items-center">
+            <button class="btn btn-sm btn-outline-secondary" id="zOut"><i class="bi bi-dash-lg"></i></button>
+            <button class="btn btn-sm btn-outline-secondary" id="zIn"><i class="bi bi-plus-lg"></i></button>
+            <button class="btn btn-sm btn-outline-secondary" id="zReset">Reset</button>
+
+            <div class="ms-auto d-flex align-items-center gap-2">
+              <span class="small text-muted">Zoom</span>
+              <input id="zRange" type="range" min="100" max="220" value="100" class="form-range" style="width: 180px;">
+              <span class="small fw-semibold"><span id="zPct">100</span>%</span>
+            </div>
+          </div>
+
+          <div class="zoom-shell rounded-4 border">
+            <div id="parkMapZoom" class="park-map zoom-stage">
+              <img src="denah_fix.png" alt="Denah Parkir Zoom" />
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- user.js dulu (membuat window.applyStatus) -->
+  <script type="module" src="user.js"></script>
+
+  <!-- Firebase listener + ONLINE/OFFLINE realtime -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC2tj9-H7O785TvoL8UAgJd7Kd-yVh6VsQ",
+      authDomain: "smart-parking-undiknas.firebaseapp.com",
+      databaseURL: "https://smart-parking-undiknas-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "smart-parking-undiknas",
+      storageBucket: "smart-parking-undiknas.firebasestorage.app",
+      messagingSenderId: "302708781691",
+      appId: "1:302708781691:web:c99afcc7a4d841b3f4a8de"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const connEl = document.getElementById("connStatus");
+    const lastEl = document.getElementById("lastUpdate");
+
+    let lastTsMs = 0;
+
+    function normalizeTsToMs(ts) {
+      if (ts == null) return 0;
+      const n = Number(ts);
+      if (!Number.isFinite(n)) return 0;
+      return n < 1e12 ? n * 1000 : n; // seconds -> ms
+    }
+
+    // listen data
+    const statusRef = ref(db, "undiknas/parking/status");
+    onValue(statusRef, (snap) => {
+      const data = snap.val();
+      if (!data) return;
+
+      const slots = data.slots ?? {};
+      // Jika device belum mengirim field `ts`, tetap anggap ONLINE berdasarkan
+      // waktu terakhir web menerima update dari Firebase.
+      const tsMs = normalizeTsToMs(data.ts) || Date.now();
+      lastTsMs = tsMs;
+
+      // update slot UI
+      window.applyStatus?.(slots, tsMs);
+    });
+
+    const OFFLINE_AFTER_SEC = 12;
+
+    setInterval(() => {
+      if (!lastTsMs) {
+        connEl.textContent = "OFFLINE";
+        connEl.classList.add("status-offline");
+        connEl.classList.remove("status-online");
+        lastEl.textContent = "-";
+        return;
+      }
+
+      const diffSec = Math.max(0, Math.floor((Date.now() - lastTsMs) / 1000));
+      lastEl.textContent = `${diffSec} dtk lalu`;
+
+      if (diffSec <= OFFLINE_AFTER_SEC) {
+        connEl.textContent = "ONLINE";
+        connEl.classList.add("status-online");
+        connEl.classList.remove("status-offline");
+      } else {
+        connEl.textContent = "OFFLINE";
+        connEl.classList.add("status-offline");
+        connEl.classList.remove("status-online");
+
+        // anti-data lama: paksa unknown
+        window.applyStatus?.({}, lastTsMs);
+      }
+    }, 1000);
+  </script>
+
+</body>
+</html>
